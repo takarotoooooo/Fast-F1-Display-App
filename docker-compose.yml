@@ -1,0 +1,12 @@
+version: '3.3'
+services:
+  streamlit:
+    build: ./docker
+    image: fast-f1-display-app:v0
+    container_name: fast-f1-display-app-streamlit
+    entrypoint: streamlit
+    command: 'run view/app.py'
+    volumes:
+      - ./app:/app
+    ports:
+      - 1080:8501

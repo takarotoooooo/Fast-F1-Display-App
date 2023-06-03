@@ -4,11 +4,21 @@ import pandas
 
 st.title('Race schedules')
 
+if 'year' not in st.session_state:
+    query_params = st.experimental_get_query_params()
+    st.session_state.year = int(query_params['year'][0])
+
 # Add a selectbox to the sidebar:
 selected_year = st.sidebar.selectbox(
     'Year',
-    (2020, 2021, 2022, 2023)
+    (2020, 2021, 2022, 2023),
+    key='year'
 )
+
+st.experimental_set_query_params(
+    year=selected_year
+)
+st.write(st.session_state.year)
 
 if selected_year:
     event_schedule = fastf1.get_event_schedule(selected_year)

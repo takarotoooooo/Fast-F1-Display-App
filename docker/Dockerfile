@@ -12,6 +12,7 @@ RUN apt-get -y upgrade && \
 
 RUN pip install --upgrade pip
 RUN pip install matplotlib \
+                seaborn \
                 streamlit==1.22.0 \
                 fastf1
 

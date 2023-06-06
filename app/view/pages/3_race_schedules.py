@@ -7,6 +7,8 @@ from pathlib import Path
 if str(Path().resolve()) not in sys.path:
     sys.path.append(str(Path().resolve()))
 import module.fastf1 as f1
+import importlib
+importlib.reload(f1)
 
 
 def init_session():
@@ -27,25 +29,19 @@ def set_query_string():
 
 def render():
     st.title(f"{st.session_state.year} Schedule")
+    st.sidebar.selectbox('Year', f1.available_years(), key='year')
 
     with st.spinner('Loading data...'):
-        event_schedule = fastf1.get_event_schedule(st.session_state.year)
-        event_schedule_pd = pd.DataFrame(event_schedule)
+        races = f1.races(st.session_state.year)
 
-    for i, record in enumerate(event_schedule_pd.to_dict('records')):
-        try:
-            event = event_schedule.get_event_by_round(record['RoundNumber'])
-        except ValueError:
-            continue
-
-        race_session = event.get_race()
+    for race in races.to_dict('records'):
         st.markdown(
             f"""
-            - Round : <a href='/race?year={ st.session_state.year }&round={ record['RoundNumber'] }'>{ record['RoundNumber'] }</a>
-            - Name : {record['OfficialEventName']}
-            - Country : {record['Country']}
-            - Location : {record['Location']}
-            - Date : {race_session.date}
+            - Round : <a href='/race?year={ st.session_state.year }&round={ race['RoundNumber'] }'>{ race['RoundNumber'] }</a>
+            - Name : {race['OfficialEventName']}
+            - Country : {race['Country']}
+            - Location : {race['Location']}
+            - Date : {race['Date']}
             """,
             unsafe_allow_html=True)
 

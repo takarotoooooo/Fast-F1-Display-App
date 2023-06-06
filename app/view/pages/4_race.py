@@ -26,11 +26,21 @@ def init_session():
         else:
             st.session_state.year = f1.available_years()[0]
 
+    global races
+    races = f1.races(st.session_state.year)
+    if 'race_name' not in st.session_state:
+        if 'round' in query_params:
+            race = races.query(f"RoundNumber == {query_params['round'][0]}")
+            st.session_state.race_name = race['OfficialEventName'].values[0]
+        else:
+            st.session_state.race_name = races['OfficialEventName'].values[0]
+
     if 'round' not in st.session_state:
         if 'round' in query_params:
             st.session_state.round = int(query_params['round'][0])
         else:
-            st.session_state.round = 1
+            race = races.query(f'OfficialEventName == "{st.session_state.race_name}"')
+            st.session_state.round = int(race['RoundNumber'].values[0])
 
 
 def set_query_string():
@@ -40,25 +50,24 @@ def set_query_string():
     )
 
 
+def race_name_change_hundler():
+    race = races.query(f'OfficialEventName == "{st.session_state.race_name}"')
+    st.session_state.round = int(race['RoundNumber'].values[0])
+
+
 def render():
+    race = races.query(f"RoundNumber == {st.session_state.round}")
+    st.title(race['OfficialEventName'].values[0])
+    st.sidebar.selectbox('Year', f1.available_years(), key='year')
+    st.sidebar.selectbox('Race', races['OfficialEventName'].values, key='race_name', on_change=race_name_change_hundler)
+
     with st.spinner('Loading data...'):
-        event_schedule = fastf1.get_event_schedule(st.session_state.year)
-        event_schedule_pd = pd.DataFrame(event_schedule)
-
-        available_round_numbers = [
-            int(record['RoundNumber'])
-            for record in event_schedule_pd.to_dict('records')]
-
         session = fastf1.get_session(
             st.session_state.year,
             st.session_state.round,
             'R')
         session.load()
         event = session.event
-
-    st.title(f"{ st.session_state.year } {event['EventName']}")
-    st.sidebar.selectbox('Year', f1.available_years(), key='year')
-    st.sidebar.selectbox('Round', available_round_numbers, key='round')
 
     # Plot position
     st.subheader('Position changes during a race')

@@ -105,3 +105,28 @@ def team_drivers(year):
     team_drivers_pd.to_pickle(pkl_file)
 
     return team_drivers_pd
+
+
+def races(year):
+    event_schedule = fastf1.get_event_schedule(year)
+    events = {
+        'RoundNumber': [],
+        'OfficialEventName': [],
+        'Country': [],
+        'Location': [],
+        'Date': []
+    }
+    for record in event_schedule.to_dict('records'):
+        try:
+            event = event_schedule.get_event_by_round(record['RoundNumber'])
+        except ValueError:
+            continue
+
+        race_session = event.get_race()
+        events['RoundNumber'].append(record['RoundNumber'])
+        events['OfficialEventName'].append(record['OfficialEventName'])
+        events['Country'].append(record['Country'])
+        events['Location'].append(record['Location'])
+        events['Date'].append(race_session.date)
+
+    return pd.DataFrame(events)

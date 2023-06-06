@@ -1,7 +1,4 @@
 import streamlit as st
-import fastf1
-import pandas as pd
-
 import sys
 from pathlib import Path
 if str(Path().resolve()) not in sys.path:

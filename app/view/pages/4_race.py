@@ -1,12 +1,12 @@
 import streamlit as st
 import fastf1
 import fastf1.plotting
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib import cm
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
 import sys
 from pathlib import Path
@@ -69,7 +69,25 @@ def render():
         session.load()
         event = session.event
 
-    # Plot position
+    st.subheader('Race information')
+    st.table(
+        pd.Series(
+            {
+                'RoundNumber': event['RoundNumber'],
+                'Country': event['Country'],
+                'Location': event['Location'],
+                'Laps': session.total_laps
+            }
+        ))
+
+    st.subheader('Race results')
+    race_result_pd = pd.DataFrame(
+        session.results[['DriverNumber', 'FullName', 'TeamName', 'GridPosition', 'Position', 'Points']]
+    ).sort_values(['Position'])
+    race_result_pd[['GridPosition', 'Position', 'Points']] = \
+        race_result_pd[['GridPosition', 'Position', 'Points']].astype('int')
+    st.table(race_result_pd)
+
     st.subheader('Position changes during a race')
     fig, ax = plt.subplots(figsize=(8.0, 4.9))
     for drv in session.drivers:
@@ -91,10 +109,16 @@ def render():
     plt.tight_layout()
     st.pyplot(fig)
 
+    st.subheader('Fastest Lap')
+    lap = session.laps.pick_fastest()
+    fastest_lap_pd = pd.Series(lap)
+    fastest_lap_pd["LapTime(s)"] = fastest_lap_pd["LapTime"].total_seconds()
+    fastest_lap_pd['LapNumber'] = fastest_lap_pd['LapNumber'].astype('int')
+    st.table(fastest_lap_pd[['Driver', 'LapTime(s)', 'LapNumber', 'Compound']])
+
     # Gear shifts
     st.subheader('Gear shifts on track')
     fig, ax = plt.subplots(figsize=(8.0, 4.9))
-    lap = session.laps.pick_fastest()
     tel = lap.get_telemetry()
     x = np.array(tel['X'].values)
     y = np.array(tel['Y'].values)
@@ -179,58 +203,23 @@ def render():
         scale="area",
         order=drivers,
         palette=driver_colors)
-    sns.swarmplot(
-        data=driver_laps,
-        x="Driver",
-        y="LapTime(s)",
-        order=drivers,
-        hue="Compound",
-        palette=fastf1.plotting.COMPOUND_COLORS,
-        hue_order=["SOFT", "MEDIUM", "HARD"],
-        linewidth=0,
-        size=5)
+    # st.write(driver_laps)
+    # sns.swarmplot(
+    #     data=driver_laps,
+    #     x="Driver",
+    #     y="LapTime(s)",
+    #     order=drivers,
+    #     hue="Compound",
+    #     palette=fastf1.plotting.COMPOUND_COLORS,
+    #     hue_order=["SOFT", "MEDIUM", "HARD"],
+    #     linewidth=0,
+    #     size=5)
     ax.set_xlabel("Driver")
     ax.set_ylabel("Lap Time (s)")
     fig.suptitle(f"{session.event['EventName']} {session.event.year}")
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
     st.pyplot(fig)
-
-    st.subheader('Race information')
-    st.markdown(
-        f"""
-        <table>
-            <tbody>
-                <tr>
-                    <th>OfficialEventName</th>
-                    <td>{event.OfficialEventName}</td>
-                </tr>
-                <tr>
-                    <th>Round</th>
-                    <td>{event.RoundNumber}</td>
-                </tr>
-                <tr>
-                    <th>Country</th>
-                    <td>{event.Country}</td>
-                </tr>
-                <tr>
-                    <th>Location</th>
-                    <td>{event.Location}</td>
-                </tr>
-                <tr>
-                    <th>Laps</th>
-                    <td>{session.total_laps}</td>
-                </tr>
-            </tbody>
-        </table>
-        """,
-        unsafe_allow_html=True)
-
-    st.subheader('Driver lineup')
-    st.write(session.results[['DriverNumber', 'FullName', 'TeamName', 'GridPosition']].sort_values(['GridPosition']))
-
-    st.subheader('Race results')
-    st.write(session.results[['DriverNumber', 'FullName', 'TeamName', 'GridPosition', 'Position', 'Points']].sort_values(['Position']))
 
     # st.subheader('Drivers')
     # st.write(session.drivers)

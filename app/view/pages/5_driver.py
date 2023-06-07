@@ -1,13 +1,6 @@
 import streamlit as st
 import fastf1
 import fastf1.plotting
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib import cm
-import seaborn as sns
-import numpy as np
-import pandas as pd
-
 import sys
 from pathlib import Path
 if str(Path().resolve()) not in sys.path:
@@ -42,6 +35,10 @@ def set_query_string():
     )
 
 
+def make_url_to_driver_race_page(value):
+    return f'/driver_race?year={st.session_state.year}&driver={st.session_state.driver}&round={value}'
+
+
 def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"')
@@ -50,14 +47,17 @@ def render():
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Driver', drivers['Abbreviation'].values, key='driver')
 
-    # races = f1.races(st.session_state.year)
     results = f1.results(st.session_state.year)
     driver_results = results[results['Abbreviation'] == st.session_state.driver]
     for c in ['Q1', 'Q2', 'Q3', 'Time']:
         driver_results[c] = driver_results[c].dt.total_seconds()
     columns = ['GridPosition', 'Position', 'Points']
     driver_results[columns] = driver_results[columns].astype('int')
-    st.table(driver_results[['RoundNumber', 'EventName', 'GridPosition', 'Position', 'Points']])
+    driver_results['Link'] = driver_results['RoundNumber'].apply(make_url_to_driver_race_page)
+    st.dataframe(
+        driver_results[['RoundNumber', 'EventName', 'GridPosition', 'Position', 'Points', 'Link']],
+        column_config={'Link': st.column_config.LinkColumn('Link')}
+    )
 
 
 def main():

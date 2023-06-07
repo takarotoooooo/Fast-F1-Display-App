@@ -24,23 +24,36 @@ def set_query_string():
     )
 
 
+def make_url_to_race_page(value):
+    return f'/race?year={st.session_state.year}&round={value}'
+
+
+def make_url_to_driver_page(value):
+    return f'/driver?year={st.session_state.year}&driver={value}'
+
+
 def render():
-    st.title(f"{st.session_state.year} Schedule")
+    st.title(f"In {st.session_state.year}")
+
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
 
     with st.spinner('Loading data...'):
         races = f1.races(st.session_state.year)
+        drivers = f1.drivers(st.session_state.year)
 
-    for race in races.to_dict('records'):
-        st.markdown(
-            f"""
-            - Round : <a href='/race?year={ st.session_state.year }&round={ race['RoundNumber'] }'>{ race['RoundNumber'] }</a>
-            - Name : {race['OfficialEventName']}
-            - Country : {race['Country']}
-            - Location : {race['Location']}
-            - Date : {race['Date']}
-            """,
-            unsafe_allow_html=True)
+    races['Link'] = races['RoundNumber'].apply(make_url_to_race_page)
+    st.subheader('Race schedules')
+    st.dataframe(
+        races,
+        column_config={'Link': st.column_config.LinkColumn('Link')}
+    )
+
+    drivers['Link'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
+    st.subheader('Driver lineup')
+    st.dataframe(
+        drivers,
+        column_config={'Link': st.column_config.LinkColumn('Link')}
+    )
 
 
 def main():

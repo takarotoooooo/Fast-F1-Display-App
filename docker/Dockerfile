@@ -13,7 +13,7 @@ RUN apt-get -y upgrade && \
 RUN pip install --upgrade pip
 RUN pip install matplotlib \
                 seaborn \
-                streamlit==1.22.0 \
+                streamlit==1.23.0 \
                 fastf1
 
 RUN mkdir -p /root/.config/matplotlib

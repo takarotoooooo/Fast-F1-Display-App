@@ -14,6 +14,7 @@ import helper.gear_shifts_on_track
 import helper.tyre_strategies_during_race
 import importlib
 importlib.reload(f1)
+importlib.reload(helper.tyre_strategies_during_race)
 
 
 def init_session():
@@ -54,6 +55,10 @@ def race_name_change_hundler():
     st.session_state.round = int(race['RoundNumber'].values[0])
 
 
+def make_url_to_driver_race_page(value):
+    return f'/driver_race?year={st.session_state.year}&round={st.session_state.round}&driver={value}'
+
+
 def render():
     race = races.query(f"RoundNumber == {st.session_state.round}")
     st.title(race['OfficialEventName'].values[0])
@@ -81,12 +86,14 @@ def render():
         use_container_width=True)
 
     st.subheader('Race results')
-    race_result_pd = pd.DataFrame(
-        session.results[['DriverNumber', 'FullName', 'TeamName', 'GridPosition', 'Position', 'Points']]
-    ).sort_values(['Position'])
+    race_result_pd = pd.DataFrame(session.results).sort_values(['Position'])
     race_result_pd[['GridPosition', 'Position', 'Points']] = \
         race_result_pd[['GridPosition', 'Position', 'Points']].astype('int')
-    st.dataframe(race_result_pd, use_container_width=True)
+    race_result_pd['LinkToDriverRacePage'] = race_result_pd['Abbreviation'].apply(make_url_to_driver_race_page)
+    st.dataframe(
+        race_result_pd[['DriverNumber', 'FullName', 'TeamName', 'GridPosition', 'Position', 'Points', 'LinkToDriverRacePage']],
+        column_config={'LinkToDriverRacePage': st.column_config.LinkColumn('Link')},
+        use_container_width=True)
 
     st.subheader('Position changes during a race')
     fig, ax = plt.subplots(figsize=(8.0, 4.9))

@@ -4,7 +4,7 @@ import fastf1.plotting
 
 
 def render(laps, drivers):
-    fig, ax = plt.subplots(figsize=(5, 10))
+    fig, ax = plt.subplots(figsize=(10, len(drivers)))
     stints = laps[['Driver', 'Stint', 'Compound', 'LapNumber']] \
         .groupby(['Driver', 'Stint', 'Compound']) \
         .count() \

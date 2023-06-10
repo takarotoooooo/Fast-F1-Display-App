@@ -13,8 +13,11 @@ from pathlib import Path
 if str(Path().resolve()) not in sys.path:
     sys.path.append(str(Path().resolve()))
 import module.fastf1 as f1
+import helper.gear_shifts_on_track
+import helper.tyre_strategies_during_race
 import importlib
 importlib.reload(f1)
+importlib.reload(helper.tyre_strategies_during_race)
 
 
 def init_session():
@@ -117,60 +120,10 @@ def render():
     st.pyplot(fig)
 
     st.subheader('Tyre strategies during a race')
-    fig, ax = plt.subplots(figsize=(10, 2))
-    driver_stints = driver_laps[["Driver", "Stint", "Compound", "LapNumber"]]
-    driver_stints = driver_stints.groupby(["Driver", "Stint", "Compound"])
-    driver_stints = driver_stints.count().reset_index()
-    driver_stints = driver_stints.rename(columns={"LapNumber": "StintLength"})
-    previous_stint_end = 0
-    for idx, row in driver_stints.iterrows():
-        ax.barh(
-            y=driver['Abbreviation'].values[0],
-            width=row["StintLength"],
-            left=previous_stint_end,
-            color=fastf1.plotting.COMPOUND_COLORS.get(row["Compound"], '#ffffff'),
-            edgecolor="black",
-            fill=True
-        )
-
-        previous_stint_end += row["StintLength"]
-    fig.suptitle(f"{session.event['EventName']} {session.event.year}")
-    ax.set_xlabel("Lap Number")
-    ax.grid(False)
-    # invert the y-axis so drivers that finish higher are closer to the top
-    ax.invert_yaxis()
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    plt.tight_layout()
-    st.pyplot(fig)
+    helper.tyre_strategies_during_race.render(laps=driver_laps, drivers=[st.session_state.driver])
 
     st.subheader('Gear shifts on track')
-    fig, ax = plt.subplots(figsize=(8.0, 4.9))
-    fistest_lap = driver_laps.pick_fastest()
-    tel = fistest_lap.get_telemetry()
-    x = np.array(tel['X'].values)
-    y = np.array(tel['Y'].values)
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    gear = tel['nGear'].to_numpy().astype(float)
-    cmap = cm.get_cmap('Paired')
-    lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N + 1), cmap=cmap)
-    lc_comp.set_array(gear)
-    lc_comp.set_linewidth(4)
-
-    fig.gca().add_collection(lc_comp)
-    ax.axis('equal')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-
-    fig.suptitle(
-        f"Fastest Lap Gear Shift Visualization\n"
-        f"{fistest_lap['Driver']} - {session.event['EventName']} {session.event.year}"
-    )
-    cbar = fig.colorbar(mappable=lc_comp, label="Gear", boundaries=np.arange(1, 10))
-    cbar.set_ticks(np.arange(1.5, 9.5))
-    cbar.set_ticklabels(np.arange(1, 9))
-    st.pyplot(fig)
+    helper.gear_shifts_on_track.render(target_lap=driver_laps.pick_fastest())
 
     driver_laps = session.laps.pick_driver(st.session_state.driver).reset_index()
     columns = [
@@ -191,7 +144,9 @@ def render():
     columns = ['LapNumber', 'Stint', 'TyreLife']
     driver_laps[columns] = driver_laps[columns].astype('int')
     driver_laps_pd = pd.DataFrame(driver_laps)
-    st.table(driver_laps_pd[['Driver', 'LapNumber', 'Stint', 'TyreLife', 'Compound', 'LapTime', 'Sector1Time', 'Sector2Time', 'Sector3Time']])
+    st.dataframe(
+        driver_laps_pd[['LapNumber', 'Stint', 'TyreLife', 'Compound', 'LapTime', 'Sector1Time', 'Sector2Time', 'Sector3Time']],
+        use_container_width=True)
 
 
 def main():

@@ -41,18 +41,18 @@ def render():
         races = f1.races(st.session_state.year)
         drivers = f1.drivers(st.session_state.year)
 
-    races['Link'] = races['RoundNumber'].apply(make_url_to_race_page)
+    races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
     st.subheader('Race schedules')
     st.dataframe(
         races,
-        column_config={'Link': st.column_config.LinkColumn('Link')}
+        column_config={'LinkToRacePage': st.column_config.LinkColumn('Link')}
     )
 
-    drivers['Link'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
+    drivers['LinkToDriverPage'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
     st.subheader('Driver lineup')
     st.dataframe(
         drivers,
-        column_config={'Link': st.column_config.LinkColumn('Link')}
+        column_config={'LinkToDriverPage': st.column_config.LinkColumn('Link')}
     )
 
 

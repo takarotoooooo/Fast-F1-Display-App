@@ -55,7 +55,7 @@ def render():
     driver_results[columns] = driver_results[columns].astype('int')
     driver_results['Link'] = driver_results['RoundNumber'].apply(make_url_to_driver_race_page)
     st.dataframe(
-        driver_results[['RoundNumber', 'EventName', 'GridPosition', 'Position', 'Points', 'Link']],
+        driver_results[['RoundNumber', 'EventName', 'TeamName', 'GridPosition', 'Position', 'Points', 'Link']],
         column_config={'Link': st.column_config.LinkColumn('Link')}
     )
 

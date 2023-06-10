@@ -2,10 +2,7 @@ import streamlit as st
 import fastf1
 import fastf1.plotting
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib import cm
 import seaborn as sns
-import numpy as np
 import pandas as pd
 
 import sys
@@ -13,6 +10,8 @@ from pathlib import Path
 if str(Path().resolve()) not in sys.path:
     sys.path.append(str(Path().resolve()))
 import module.fastf1 as f1
+import helper.gear_shifts_on_track
+import helper.tyre_strategies_during_race
 import importlib
 importlib.reload(f1)
 
@@ -70,7 +69,7 @@ def render():
         event = session.event
 
     st.subheader('Race information')
-    st.table(
+    st.dataframe(
         pd.Series(
             {
                 'RoundNumber': event['RoundNumber'],
@@ -78,7 +77,8 @@ def render():
                 'Location': event['Location'],
                 'Laps': session.total_laps
             }
-        ))
+        ),
+        use_container_width=True)
 
     st.subheader('Race results')
     race_result_pd = pd.DataFrame(
@@ -86,7 +86,7 @@ def render():
     ).sort_values(['Position'])
     race_result_pd[['GridPosition', 'Position', 'Points']] = \
         race_result_pd[['GridPosition', 'Position', 'Points']].astype('int')
-    st.table(race_result_pd)
+    st.dataframe(race_result_pd, use_container_width=True)
 
     st.subheader('Position changes during a race')
     fig, ax = plt.subplots(figsize=(8.0, 4.9))
@@ -114,73 +114,17 @@ def render():
     fastest_lap_pd = pd.Series(lap)
     fastest_lap_pd["LapTime(s)"] = fastest_lap_pd["LapTime"].total_seconds()
     fastest_lap_pd['LapNumber'] = fastest_lap_pd['LapNumber'].astype('int')
-    st.table(fastest_lap_pd[['Driver', 'LapTime(s)', 'LapNumber', 'Compound']])
+    st.dataframe(fastest_lap_pd[['Driver', 'LapTime(s)', 'LapNumber', 'Compound']], use_container_width=True)
 
     # Gear shifts
     st.subheader('Gear shifts on track')
-    fig, ax = plt.subplots(figsize=(8.0, 4.9))
-    tel = lap.get_telemetry()
-    x = np.array(tel['X'].values)
-    y = np.array(tel['Y'].values)
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    gear = tel['nGear'].to_numpy().astype(float)
-    cmap = cm.get_cmap('Paired')
-    lc_comp = LineCollection(segments, norm=plt.Normalize(1, cmap.N + 1), cmap=cmap)
-    lc_comp.set_array(gear)
-    lc_comp.set_linewidth(4)
-
-    fig.gca().add_collection(lc_comp)
-    ax.axis('equal')
-    ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
-
-    fig.suptitle(
-        f"Fastest Lap Gear Shift Visualization\n"
-        f"{lap['Driver']} - {session.event['EventName']} {session.event.year}"
-    )
-    cbar = fig.colorbar(mappable=lc_comp, label="Gear", boundaries=np.arange(1, 10))
-    cbar.set_ticks(np.arange(1.5, 9.5))
-    cbar.set_ticklabels(np.arange(1, 9))
-    st.pyplot(fig)
+    helper.gear_shifts_on_track.render(target_lap=lap)
 
     # Tyre strategies
     st.subheader('Tyre strategies during a race')
-    fig, ax = plt.subplots(figsize=(5, 10))
     laps = session.laps
     drivers = [session.get_driver(driver)["Abbreviation"] for driver in session.drivers]
-    stints = laps[["Driver", "Stint", "Compound", "LapNumber"]]
-    stints = stints.groupby(["Driver", "Stint", "Compound"])
-    stints = stints.count().reset_index()
-    stints = stints.rename(columns={"LapNumber": "StintLength"})
-    for driver in drivers:
-        driver_stints = stints.loc[stints["Driver"] == driver]
-
-        previous_stint_end = 0
-        for idx, row in driver_stints.iterrows():
-            # each row contains the compound name and stint length
-            # we can use these information to draw horizontal bars
-            plt.barh(
-                y=driver,
-                width=row["StintLength"],
-                left=previous_stint_end,
-                color=fastf1.plotting.COMPOUND_COLORS[row["Compound"]],
-                edgecolor="black",
-                fill=True
-            )
-
-            previous_stint_end += row["StintLength"]
-    fig.suptitle(f"{session.event['EventName']} {session.event.year}")
-    ax.set_xlabel("Lap Number")
-    ax.grid(False)
-    # invert the y-axis so drivers that finish higher are closer to the top
-    ax.invert_yaxis()
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    plt.tight_layout()
-    st.pyplot(fig)
-
-    st.subheader('Qualifying results overview')
+    helper.tyre_strategies_during_race.render(laps=laps, drivers=drivers)
 
     st.subheader('Driver Laptimes Distribution Visualization')
     fig, ax = plt.subplots(figsize=(10, 5))

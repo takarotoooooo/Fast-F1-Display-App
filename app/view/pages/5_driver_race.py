@@ -2,10 +2,7 @@ import streamlit as st
 import fastf1
 import fastf1.plotting
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib import cm
 import seaborn as sns
-import numpy as np
 import pandas as pd
 
 import sys
@@ -15,9 +12,11 @@ if str(Path().resolve()) not in sys.path:
 import module.fastf1 as f1
 import helper.gear_shifts_on_track
 import helper.tyre_strategies_during_race
+import helper.speed_visualization_on_track_map
 import importlib
 importlib.reload(f1)
 importlib.reload(helper.tyre_strategies_during_race)
+importlib.reload(helper.speed_visualization_on_track_map)
 
 
 def init_session():
@@ -122,8 +121,12 @@ def render():
     st.subheader('Tyre strategies during a race')
     helper.tyre_strategies_during_race.render(laps=driver_laps, drivers=[st.session_state.driver])
 
+    fastest_lap = driver_laps.pick_fastest()
     st.subheader('Gear shifts on track')
-    helper.gear_shifts_on_track.render(target_lap=driver_laps.pick_fastest())
+    helper.gear_shifts_on_track.render(target_lap=fastest_lap)
+
+    st.subheader('Speed visualization on track map')
+    helper.speed_visualization_on_track_map.render(target_lap=fastest_lap)
 
     driver_laps = session.laps.pick_driver(st.session_state.driver).reset_index()
     columns = [

@@ -9,8 +9,10 @@ from pathlib import Path
 if str(Path().resolve()) not in sys.path:
     sys.path.append(str(Path().resolve()))
 import module.fastf1 as f1
+import helper.speed_visualization_on_track_map
 import importlib
 importlib.reload(f1)
+importlib.reload(helper.speed_visualization_on_track_map)
 
 
 def init_session():
@@ -124,15 +126,6 @@ def render():
         'LapTime_x': 'LapTime',
         'LapTime_y': 'TargetLapTime',
     })
-    columns = [
-        'LapNumber',
-        'TimeGap',
-        'LapTimeGap',
-        'Position',
-        'TargetPosition',
-        'LapTime',
-        'TargetLapTime']
-    st.table(comp_pd[columns])
 
     st.subheader('Time gap each lap end')
     fig, ax = plt.subplots()
@@ -153,14 +146,45 @@ def render():
         f"Time gap each lap end {driver['Abbreviation'].values[0]} and {target_driver['Abbreviation'].values[0]}")
     st.pyplot(fig)
 
+    st.subheader('Speed gap on track')
+    drive_fastest_lap = session.laps.pick_driver(st.session_state.driver).pick_quicklaps().reset_index().pick_fastest()
+    drive_fastest_lap_tel = drive_fastest_lap.get_telemetry()
+    target_drive_fastest_lap = session.laps.pick_driver(st.session_state.target_driver).pick_quicklaps().reset_index().pick_fastest()
+    target_drive_fastest_lap_tel = target_drive_fastest_lap.get_telemetry()
+    columns = ['SessionTime', 'Time']
+    for c in columns:
+        drive_fastest_lap_tel[c] = drive_fastest_lap_tel[c].dt.total_seconds()
+        target_drive_fastest_lap_tel[c] = target_drive_fastest_lap_tel[c].dt.total_seconds()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader(st.session_state.driver)
+        helper.speed_visualization_on_track_map.render(target_lap=drive_fastest_lap)
+        st.dataframe(drive_fastest_lap, use_container_width=True)
+        st.dataframe(drive_fastest_lap_tel, use_container_width=True)
+
+    with col2:
+        st.subheader(st.session_state.target_driver)
+        helper.speed_visualization_on_track_map.render(target_lap=target_drive_fastest_lap)
+        st.dataframe(target_drive_fastest_lap, use_container_width=True)
+        st.dataframe(target_drive_fastest_lap_tel, use_container_width=True)
+
+    columns = [
+        'LapNumber',
+        'TimeGap',
+        'LapTimeGap',
+        'Position',
+        'TargetPosition',
+        'LapTime',
+        'TargetLapTime']
+    st.dataframe(comp_pd[columns], use_container_width=True)
+
     columns = ['Driver', 'Time', 'LapNumber', 'Position', 'Stint', 'TyreLife', 'Compound', 'LapTime', 'Sector1Time', 'Sector2Time', 'Sector3Time']
     st.subheader(driver['Abbreviation'].values[0])
-    st.table(driver_laps_pd[columns])
+    st.dataframe(driver_laps_pd[columns], use_container_width=True)
 
     st.subheader(target_driver['Abbreviation'].values[0])
-    st.table(target_driver_laps_pd[columns])
-
-    st.table(target_driver_laps_pd)
+    st.dataframe(target_driver_laps_pd[columns], use_container_width=True)
 
 
 def main():

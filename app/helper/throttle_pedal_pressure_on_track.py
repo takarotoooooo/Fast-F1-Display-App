@@ -12,17 +12,17 @@ def render(target_lap):
     y = np.array(tel['Y'].values)
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    speed = tel['Speed'].to_numpy().astype(float)
-    cmap = mpl.cm.plasma
+    throttle = tel['Throttle'].to_numpy().astype(float)
+    cmap = mpl.cm.magma
 
-    norm = plt.Normalize(speed.min(), speed.max())
+    norm = plt.Normalize(0, 100)
     lc_comp = LineCollection(segments, norm=norm, cmap=cmap)
-    lc_comp.set_array(speed)
+    lc_comp.set_array(throttle)
     lc_comp.set_linewidth(4)
 
     fig.gca().add_collection(lc_comp)
     ax.axis('equal')
     ax.tick_params(labelleft=False, left=False, labelbottom=False, bottom=False)
 
-    fig.colorbar(mappable=lc_comp, label='Speed', boundaries=np.arange(speed.min(), speed.max()))
+    fig.colorbar(mappable=lc_comp, label='Throttle pedal pressure [%]', boundaries=np.arange(1, 100))
     st.pyplot(fig)

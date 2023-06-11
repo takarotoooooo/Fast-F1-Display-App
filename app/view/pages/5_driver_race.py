@@ -3,7 +3,6 @@ import fastf1
 import fastf1.plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
 
 import sys
 from pathlib import Path
@@ -13,10 +12,12 @@ import module.fastf1 as f1
 import helper.gear_shifts_on_track
 import helper.tyre_strategies_during_race
 import helper.speed_visualization_on_track_map
+import helper.throttle_pedal_pressure_on_track
 import importlib
 importlib.reload(f1)
 importlib.reload(helper.tyre_strategies_during_race)
 importlib.reload(helper.speed_visualization_on_track_map)
+importlib.reload(helper.throttle_pedal_pressure_on_track)
 
 
 def init_session():
@@ -87,13 +88,44 @@ def render():
         st.text('レース情報を取得できませんでした')
         return
 
-    driver_laps = session.laps.pick_driver(st.session_state.driver).pick_quicklaps().reset_index()
+    driver_laps = session.laps.pick_driver(st.session_state.driver).reset_index()
+    driver_quicklaps = session.laps.pick_driver(st.session_state.driver).pick_quicklaps().reset_index()
     driver_laps["LapTime(s)"] = driver_laps["LapTime"].dt.total_seconds()
+    driver_quicklaps["LapTime(s)"] = driver_quicklaps["LapTime"].dt.total_seconds()
+    # columns = [
+    #     'Time',
+    #     'LapTime',
+    #     'PitOutTime',
+    #     'PitInTime',
+    #     'Sector1Time',
+    #     'Sector2Time',
+    #     'Sector3Time',
+    #     'Sector1SessionTime',
+    #     'Sector2SessionTime',
+    #     'Sector3SessionTime',
+    #     'LapStartTime'
+    # ]
+    # for c in columns:
+    #     driver_laps[c] = driver_laps[c].dt.total_seconds()
+    #     driver_quicklaps[c] = driver_quicklaps[c].dt.total_seconds()
+
+    # columns = ['LapNumber', 'Stint', 'TyreLife']
+    # driver_laps[columns] = driver_laps[columns].astype('int')
+    # driver_quicklaps[columns] = driver_quicklaps[columns].astype('int')
+
+    # st.header('Laps')
+    # st.dataframe(
+    #     driver_laps[['LapNumber', 'Stint', 'TyreLife', 'Compound', 'LapTime(s)', 'Sector1Time', 'Sector2Time', 'Sector3Time']],
+    #     use_container_width=True)
+
+    # st.dataframe(
+    #     driver_quicklaps[['LapNumber', 'Stint', 'TyreLife', 'Compound', 'LapTime(s)', 'Sector1Time', 'Sector2Time', 'Sector3Time']],
+    #     use_container_width=True)
 
     st.subheader('Driver Laptimes')
     fig, ax = plt.subplots(figsize=(8, 8))
     sns.scatterplot(
-        data=driver_laps,
+        data=driver_quicklaps,
         x="LapNumber",
         y="LapTime(s)",
         ax=ax,
@@ -105,13 +137,7 @@ def render():
 
     ax.set_xlabel("Lap Number")
     ax.set_ylabel("Lap Time")
-
-    # The y-axis increases from bottom to top by default
-    # Since we are plotting time, it makes sense to invert the axis
     ax.invert_yaxis()
-    fig.suptitle(f"{st.session_state.driver} Laptimes in the {st.session_state.year} {session.event['EventName']}")
-
-    # Turn on major grid lines
     ax.grid(color='w', which='major', axis='both')
     sns.despine(left=True, bottom=True)
 
@@ -121,35 +147,22 @@ def render():
     st.subheader('Tyre strategies during a race')
     helper.tyre_strategies_during_race.render(laps=driver_laps, drivers=[st.session_state.driver])
 
-    fastest_lap = driver_laps.pick_fastest()
+    st.header('FastestLap Telemetry')
+    fastest_lap = driver_quicklaps.pick_fastest()
+    fastest_lap_tel = fastest_lap.get_telemetry()
+    columns = ['SessionTime', 'Time']
+    for c in columns:
+        fastest_lap_tel[c] = fastest_lap_tel[c].dt.total_seconds()
+    st.dataframe(fastest_lap_tel, use_container_width=True)
+
     st.subheader('Gear shifts on track')
     helper.gear_shifts_on_track.render(target_lap=fastest_lap)
 
-    st.subheader('Speed visualization on track map')
+    st.subheader('Speed visualization on track')
     helper.speed_visualization_on_track_map.render(target_lap=fastest_lap)
 
-    driver_laps = session.laps.pick_driver(st.session_state.driver).reset_index()
-    columns = [
-        'Time',
-        'LapTime',
-        'PitOutTime',
-        'PitInTime',
-        'Sector1Time',
-        'Sector2Time',
-        'Sector3Time',
-        'Sector1SessionTime',
-        'Sector2SessionTime',
-        'Sector3SessionTime',
-        'LapStartTime'
-    ]
-    for c in columns:
-        driver_laps[c] = driver_laps[c].dt.total_seconds()
-    columns = ['LapNumber', 'Stint', 'TyreLife']
-    driver_laps[columns] = driver_laps[columns].astype('int')
-    driver_laps_pd = pd.DataFrame(driver_laps)
-    st.dataframe(
-        driver_laps_pd[['LapNumber', 'Stint', 'TyreLife', 'Compound', 'LapTime', 'Sector1Time', 'Sector2Time', 'Sector3Time']],
-        use_container_width=True)
+    st.subheader('Throttle pedal pressure on track')
+    helper.throttle_pedal_pressure_on_track.render(target_lap=fastest_lap)
 
 
 def main():

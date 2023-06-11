@@ -46,22 +46,28 @@ def results(year, use_cache=True):
     return results_pd
 
 
-def drivers(year):
+def drivers(year, use_cache=True):
     pkl_file = f"/app/data/{year}/drivers.zip"
 
-    if os.path.isfile(pkl_file):
+    if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
 
-    column_names = [
+    driver_columns = [
         'DriverNumber',
         'Abbreviation',
         'FullName',
         'CountryCode']
 
-    drivers_pd = results(year) \
-        .groupby(column_names) \
-        .nunique().reset_index()[column_names + ['EventName']] \
-        .rename(columns={'EventName': 'RaceCount'})
+    drivers_pd = results(year).groupby(driver_columns).agg({
+        'HeadshotUrl': 'max',
+        'TeamName': pd.Series.unique,
+        'EventName': pd.Series.nunique,
+        'Points': 'sum'
+    }).reset_index().rename(columns={
+        'TeamName': 'Teams',
+        'EventName': 'RaceCount',
+        'Points': 'TotalPoint'
+    })
 
     os.makedirs(f"/app/data/{year}", exist_ok=True)
     drivers_pd.to_pickle(pkl_file)
@@ -69,18 +75,22 @@ def drivers(year):
     return drivers_pd
 
 
-def teams(year):
+def teams(year, use_cache=True):
     pkl_file = f"/app/data/{year}/teams.zip"
 
-    if os.path.isfile(pkl_file):
+    if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
 
-    column_names = ['TeamName', 'TeamColor']
-
-    teams_pd = results(year) \
-        .groupby(column_names) \
-        .nunique().reset_index()[column_names + ['EventName']] \
-        .rename(columns={'EventName': 'RaceCount'})
+    team_columns = ['TeamName', 'TeamColor']
+    teams_pd = results(year).groupby(team_columns).agg({
+        'Abbreviation': pd.Series.unique,
+        'EventName': pd.Series.nunique,
+        'Points': 'sum'
+    }).reset_index().rename(columns={
+        'Abbreviation': 'Drivers',
+        'EventName': 'RaceCount',
+        'Points': 'TotalPoint'
+    })
 
     os.makedirs(f"/app/data/{year}", exist_ok=True)
     teams_pd.to_pickle(pkl_file)
@@ -88,18 +98,28 @@ def teams(year):
     return teams_pd
 
 
-def team_drivers(year):
+def team_drivers(year, use_cache=True):
     pkl_file = f"/app/data/{year}/team_drivers.zip"
 
-    if os.path.isfile(pkl_file):
+    if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
 
-    column_names = ['TeamName', 'DriverNumber', 'Abbreviation']
+    team_driver_columns = [
+        'DriverNumber',
+        'Abbreviation',
+        'FullName',
+        'CountryCode',
+        'TeamName',
+        'TeamColor']
 
-    team_drivers_pd = results(year) \
-        .groupby(column_names) \
-        .nunique().reset_index()[column_names + ['EventName']] \
-        .rename(columns={'EventName': 'RaceCount'})
+    team_drivers_pd = results(year).groupby(team_driver_columns).agg({
+        'HeadshotUrl': 'max',
+        'EventName': pd.Series.nunique,
+        'Points': 'sum'
+    }).reset_index().rename(columns={
+        'EventName': 'RaceCount',
+        'Points': 'TotalPoint'
+    })
 
     os.makedirs(f"/app/data/{year}", exist_ok=True)
     team_drivers_pd.to_pickle(pkl_file)

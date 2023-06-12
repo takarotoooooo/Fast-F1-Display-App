@@ -33,6 +33,11 @@ def make_url_to_driver_page(value):
 
 
 def render():
+    st.set_page_config(
+        page_title=f'{st.session_state.year} | RaceSchedule',
+        layout='wide'
+    )
+
     st.title(f"In {st.session_state.year}")
 
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
@@ -45,8 +50,13 @@ def render():
     races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
     st.header('Race schedules')
     st.dataframe(
-        races,
-        column_config={'LinkToRacePage': st.column_config.LinkColumn('Link')},
+        races[[
+            'RoundNumber',
+            'OfficialEventName',
+            'RaceDate',
+            'LinkToRacePage'
+        ]],
+        column_config={'LinkToRacePage': st.column_config.LinkColumn('LinkToRacePage')},
         use_container_width=True,
         hide_index=True
     )

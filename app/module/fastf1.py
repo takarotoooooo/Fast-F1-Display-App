@@ -127,14 +127,20 @@ def team_drivers(year, use_cache=True):
     return team_drivers_pd
 
 
-def races(year):
+def races(year, use_cache=True):
+    pkl_file = f"/app/data/{year}/races.zip"
+
+    if os.path.isfile(pkl_file) and use_cache:
+        return pd.read_pickle(pkl_file)
+
     event_schedule = fastf1.get_event_schedule(year)
     events = {
         'RoundNumber': [],
         'OfficialEventName': [],
+        'EventName': [],
         'Country': [],
         'Location': [],
-        'Date': []
+        'RaceDate': []
     }
     for record in event_schedule.to_dict('records'):
         try:
@@ -144,9 +150,14 @@ def races(year):
 
         race_session = event.get_race()
         events['RoundNumber'].append(record['RoundNumber'])
-        events['OfficialEventName'].append(record['OfficialEventName'])
+        events['OfficialEventName'].append(event['OfficialEventName'])
+        events['EventName'].append(event[('EventName')])
         events['Country'].append(record['Country'])
         events['Location'].append(record['Location'])
-        events['Date'].append(race_session.date)
+        events['RaceDate'].append(race_session.date)
 
-    return pd.DataFrame(events)
+    races_pd = pd.DataFrame(events)
+    os.makedirs(f"/app/data/{year}", exist_ok=True)
+    races_pd.to_pickle(pkl_file)
+
+    return races_pd

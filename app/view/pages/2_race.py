@@ -61,6 +61,11 @@ def make_url_to_driver_race_page(value):
 
 def render():
     race = races.query(f"RoundNumber == {st.session_state.round}")
+    st.set_page_config(
+        page_title=f'{st.session_state.year} | {race["EventName"].values[0]} | Race',
+        layout='wide'
+    )
+
     st.title(race['OfficialEventName'].values[0])
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Race', races['OfficialEventName'].values, key='race_name', on_change=race_name_change_hundler)
@@ -92,8 +97,9 @@ def render():
     race_result_pd['LinkToDriverRacePage'] = race_result_pd['Abbreviation'].apply(make_url_to_driver_race_page)
     st.dataframe(
         race_result_pd[['DriverNumber', 'FullName', 'TeamName', 'GridPosition', 'Position', 'Points', 'LinkToDriverRacePage']],
-        column_config={'LinkToDriverRacePage': st.column_config.LinkColumn('Link')},
-        use_container_width=True)
+        column_config={'LinkToDriverRacePage': st.column_config.LinkColumn('LinkToDriverRacePage')},
+        use_container_width=True,
+        hide_index=True)
 
     st.subheader('Position changes during a race')
     fig, ax = plt.subplots(figsize=(8.0, 4.9))

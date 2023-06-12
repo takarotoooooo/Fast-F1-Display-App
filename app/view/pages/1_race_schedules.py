@@ -40,22 +40,43 @@ def render():
     with st.spinner('Loading data...'):
         races = f1.races(st.session_state.year)
         drivers = f1.drivers(st.session_state.year)
+        teams = f1.teams(st.session_state.year)
 
     races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
     st.header('Race schedules')
     st.dataframe(
         races,
-        column_config={'LinkToRacePage': st.column_config.LinkColumn('Link')}
+        column_config={'LinkToRacePage': st.column_config.LinkColumn('Link')},
+        use_container_width=True,
+        hide_index=True
     )
 
     drivers['LinkToDriverPage'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
     st.header('Driver lineup')
     st.dataframe(
         drivers,
-        column_config={'LinkToDriverPage': st.column_config.LinkColumn('Link')}
+        column_config={
+            'HeadshotUrl': st.column_config.ImageColumn('Headshot'),
+            'Teams': st.column_config.ListColumn('Teams'),
+            'RaceCount': st.column_config.NumberColumn('RaceCount'),
+            'TotalPoint': st.column_config.NumberColumn('TotalPoint'),
+            'LinkToDriverPage': st.column_config.LinkColumn('Link')
+        },
+        use_container_width=True,
+        hide_index=True
     )
 
     st.header('Team lineup')
+    st.dataframe(
+        teams,
+        column_config={
+            'Drivers': st.column_config.ListColumn('Drivers'),
+            'RaceCount': st.column_config.NumberColumn('RaceCount'),
+            'TotalPoint': st.column_config.NumberColumn('TotalPoint')
+        },
+        use_container_width=True,
+        hide_index=True
+    )
 
 
 def main():

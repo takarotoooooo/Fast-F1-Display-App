@@ -5,7 +5,7 @@ services:
     image: fast-f1-display-app:v0
     container_name: fast-f1-display-app-streamlit
     entrypoint: streamlit
-    command: 'run view/app.py'
+    command: 'run view/top.py'
     volumes:
       - ./app:/app
     ports:

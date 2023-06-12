@@ -71,6 +71,10 @@ def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
     race = races.query(f"RoundNumber == {st.session_state.round}")
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"')
+    st.set_page_config(
+        page_title=f'{st.session_state.year} | {driver["Abbreviation"].values[0]} - {race["EventName"].values[0]} | DriverRace',
+        layout='wide'
+    )
 
     st.title(f"{driver['FullName'].values[0]} at {race['Country'].values[0]} in {st.session_state.year}")
     st.sidebar.selectbox('Year', f1.available_years(), key='year')

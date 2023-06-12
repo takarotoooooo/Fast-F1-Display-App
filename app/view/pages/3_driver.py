@@ -42,6 +42,10 @@ def make_url_to_driver_race_page(value):
 def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"')
+    st.set_page_config(
+        page_title=f'{st.session_state.year} | {driver["FullName"].values[0]} | Driver',
+        layout='wide'
+    )
 
     st.title(f"{driver['FullName'].values[0]} in {st.session_state.year}")
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
@@ -56,7 +60,9 @@ def render():
     driver_results['Link'] = driver_results['RoundNumber'].apply(make_url_to_driver_race_page)
     st.dataframe(
         driver_results[['RoundNumber', 'EventName', 'TeamName', 'GridPosition', 'Position', 'Points', 'Link']],
-        column_config={'Link': st.column_config.LinkColumn('Link')}
+        column_config={'Link': st.column_config.LinkColumn('Link')},
+        use_container_width=True,
+        hide_index=True
     )
 
 

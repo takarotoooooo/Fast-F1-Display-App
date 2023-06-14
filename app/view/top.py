@@ -34,35 +34,33 @@ def make_url_to_driver_page(value):
 
 def render():
     st.set_page_config(
-        page_title=f'{st.session_state.year} | Top',
+        page_title=f'{st.session_state.year} Season',
         layout='wide'
     )
 
-    st.title(f"{st.session_state.year} | Top")
+    st.title(f"{st.session_state.year} Season")
 
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
 
     with st.spinner('Loading data...'):
         races = f1.season_races_df(year=st.session_state.year)
+        races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
+        races = races[['RoundNumber', 'EventName', 'RaceStartDate', 'LinkToRacePage']]
+
         drivers = f1.season_drivers_df(year=st.session_state.year)
+        drivers['LinkToDriverPage'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
+
         teams = f1.season_teams_df(year=st.session_state.year)
 
-    races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
-    st.header('Race schedules')
+    st.header('Races')
     st.dataframe(
-        races[[
-            'RoundNumber',
-            'EventName',
-            'RaceStartDate',
-            'LinkToRacePage'
-        ]],
+        races,
         column_config={'LinkToRacePage': st.column_config.LinkColumn('LinkToRacePage')},
         use_container_width=True,
         hide_index=True
     )
 
-    drivers['LinkToDriverPage'] = drivers['Abbreviation'].apply(make_url_to_driver_page)
-    st.header('Driver lineup')
+    st.header('Drivers')
     st.dataframe(
         drivers,
         column_config={
@@ -76,7 +74,7 @@ def render():
         hide_index=True
     )
 
-    st.header('Team lineup')
+    st.header('Teams')
     st.dataframe(
         teams,
         column_config={

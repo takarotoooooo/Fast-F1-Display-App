@@ -43,17 +43,17 @@ def render():
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
 
     with st.spinner('Loading data...'):
-        races = f1.races(st.session_state.year)
-        drivers = f1.drivers(st.session_state.year)
-        teams = f1.teams(st.session_state.year)
+        races = f1.season_races_df(year=st.session_state.year)
+        drivers = f1.season_drivers_df(year=st.session_state.year)
+        teams = f1.season_teams_df(year=st.session_state.year)
 
     races['LinkToRacePage'] = races['RoundNumber'].apply(make_url_to_race_page)
     st.header('Race schedules')
     st.dataframe(
         races[[
             'RoundNumber',
-            'OfficialEventName',
-            'RaceDate',
+            'EventName',
+            'RaceStartDate',
             'LinkToRacePage'
         ]],
         column_config={'LinkToRacePage': st.column_config.LinkColumn('LinkToRacePage')},

@@ -27,19 +27,19 @@ def init_session():
             st.session_state.year = f1.available_years()[0]
 
     global races
-    races = f1.races(st.session_state.year)
+    races = f1.season_races_df(st.session_state.year)
     if 'race_name' not in st.session_state:
         if 'round' in query_params:
             race = races.query(f"RoundNumber == {query_params['round'][0]}")
-            st.session_state.race_name = race['OfficialEventName'].values[0]
+            st.session_state.race_name = race['EventName'].values[0]
         else:
-            st.session_state.race_name = races['OfficialEventName'].values[0]
+            st.session_state.race_name = races['EventName'].values[0]
 
     if 'round' not in st.session_state:
         if 'round' in query_params:
             st.session_state.round = int(query_params['round'][0])
         else:
-            race = races.query(f'OfficialEventName == "{st.session_state.race_name}"')
+            race = races.query(f'EventName == "{st.session_state.race_name}"')
             st.session_state.round = int(race['RoundNumber'].values[0])
 
 
@@ -51,7 +51,7 @@ def set_query_string():
 
 
 def race_name_change_hundler():
-    race = races.query(f'OfficialEventName == "{st.session_state.race_name}"')
+    race = races.query(f'EventName == "{st.session_state.race_name}"')
     st.session_state.round = int(race['RoundNumber'].values[0])
 
 
@@ -68,7 +68,7 @@ def render():
 
     st.title(race['OfficialEventName'].values[0])
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
-    st.sidebar.selectbox('Race', races['OfficialEventName'].values, key='race_name', on_change=race_name_change_hundler)
+    st.sidebar.selectbox('Race', races['EventName'].values, key='race_name', on_change=race_name_change_hundler)
 
     with st.spinner('Loading data...'):
         session = fastf1.get_session(

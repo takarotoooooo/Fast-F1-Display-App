@@ -20,7 +20,7 @@ def init_session():
             st.session_state.year = f1.available_years()[0]
 
     global drivers
-    drivers = f1.drivers(st.session_state.year)
+    drivers = f1.season_drivers_df(st.session_state.year)
     if 'driver' not in st.session_state:
         if 'driver' in query_params:
             st.session_state.driver = query_params['driver'][0]
@@ -51,7 +51,7 @@ def render():
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Driver', drivers['Abbreviation'].values, key='driver')
 
-    results = f1.results(st.session_state.year)
+    results = f1.season_results_df(st.session_state.year)
     driver_results = results[results['Abbreviation'] == st.session_state.driver]
     for c in ['Q1', 'Q2', 'Q3', 'Time']:
         driver_results[c] = driver_results[c].dt.total_seconds()

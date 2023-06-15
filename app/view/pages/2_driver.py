@@ -41,23 +41,25 @@ def make_url_to_driver_race_page(value):
 
 def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
-    driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"')
+    driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"').iloc[0]
     st.set_page_config(
-        page_title=f'{st.session_state.year} | {driver["FullName"].values[0]} | Driver',
+        page_title=f'{st.session_state.year} | {driver["FullName"]}',
         layout='wide'
     )
 
-    st.title(f"{driver['FullName'].values[0]} in {st.session_state.year}")
+    st.title(f"{st.session_state.year} | {driver['FullName']}")
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Driver', drivers['Abbreviation'].values, key='driver')
 
-    results = f1.season_results_df(st.session_state.year)
-    driver_results = results[results['Abbreviation'] == st.session_state.driver]
-    for c in ['Q1', 'Q2', 'Q3', 'Time']:
-        driver_results[c] = driver_results[c].dt.total_seconds()
-    columns = ['GridPosition', 'Position', 'Points']
-    driver_results[columns] = driver_results[columns].astype('int')
-    driver_results['Link'] = driver_results['RoundNumber'].apply(make_url_to_driver_race_page)
+    with st.spinner('Loading data...'):
+        season_results = f1.season_results_df(st.session_state.year)
+        driver_results = season_results[season_results['Abbreviation'] == st.session_state.driver]
+        for c in ['Q1', 'Q2', 'Q3', 'Time']:
+            driver_results[c] = driver_results[c].dt.total_seconds()
+        columns = ['GridPosition', 'Position', 'Points']
+        driver_results[columns] = driver_results[columns].astype('int')
+        driver_results['Link'] = driver_results['RoundNumber'].apply(make_url_to_driver_race_page)
+
     st.dataframe(
         driver_results[['RoundNumber', 'EventName', 'TeamName', 'GridPosition', 'Position', 'Points', 'Link']],
         column_config={'Link': st.column_config.LinkColumn('Link')},

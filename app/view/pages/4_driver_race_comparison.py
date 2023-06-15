@@ -28,8 +28,8 @@ def init_session():
     races = f1.season_races_df(st.session_state.year)
     if 'race_name' not in st.session_state:
         if 'round' in query_params:
-            race = races.query(f"RoundNumber == {query_params['round'][0]}")
-            st.session_state.race_name = race['EventName'].values[0]
+            race = races.query(f"RoundNumber == {query_params['round'][0]}").iloc[0]
+            st.session_state.race_name = race['EventName']
         else:
             st.session_state.race_name = races['EventName'].values[0]
 
@@ -37,8 +37,8 @@ def init_session():
         if 'round' in query_params:
             st.session_state.round = int(query_params['round'][0])
         else:
-            race = races.query(f'EventName == "{st.session_state.race_name}"')
-            st.session_state.round = int(race['RoundNumber'].values[0])
+            race = races.query(f'EventName == "{st.session_state.race_name}"').iloc[0]
+            st.session_state.round = int(race['RoundNumber'])
 
     global drivers
     drivers = f1.season_drivers_df(st.session_state.year)
@@ -65,22 +65,22 @@ def set_query_string():
 
 
 def race_name_change_hundler():
-    race = races.query(f'EventName == "{st.session_state.race_name}"')
-    st.session_state.round = int(race['RoundNumber'].values[0])
+    race = races.query(f'EventName == "{st.session_state.race_name}"').iloc[0]
+    st.session_state.round = int(race['RoundNumber'])
 
 
 def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
-    race = races.query(f"RoundNumber == {st.session_state.round}")
-    driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"')
-    target_driver = drivers.query(f'Abbreviation == "{st.session_state.target_driver}"')
-    target_driver_result = f1.season_results_df(st.session_state.year).query(f'Abbreviation == "{st.session_state.target_driver}"')
+    race = races.query(f"RoundNumber == {st.session_state.round}").iloc[0]
+    driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"').iloc[0]
+    target_driver = drivers.query(f'Abbreviation == "{st.session_state.target_driver}"').iloc[0]
+    target_driver_result = f1.season_results_df(st.session_state.year).query(f'Abbreviation == "{st.session_state.target_driver}"').iloc[0]
     st.set_page_config(
-        page_title=f'{st.session_state.year} | {driver["Abbreviation"].values[0]} x {target_driver["Abbreviation"].values[0]} | {race["EventName"].values[0]}',
+        page_title=f'{st.session_state.year} | {race["EventName"]} | {driver["Abbreviation"]} - {target_driver["Abbreviation"]}',
         layout='wide'
     )
 
-    st.title(f"Comparison {driver['Abbreviation'].values[0]} and {target_driver['Abbreviation'].values[0]}")
+    st.title(f'{st.session_state.year} | {race["EventName"]} | {driver["Abbreviation"]} - {target_driver["Abbreviation"]}')
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Race', races['EventName'].values, key='race_name', on_change=race_name_change_hundler)
     st.sidebar.selectbox('Driver', drivers['Abbreviation'].values, key='driver')
@@ -93,39 +93,45 @@ def render():
                 st.session_state.round,
                 'R')
             session.load()
+
+            driver_laps = pd.DataFrame(session.laps.pick_driver(st.session_state.driver).reset_index())
+            target_driver_laps = pd.DataFrame(session.laps.pick_driver(st.session_state.target_driver).reset_index())
+            columns = [
+                'Time',
+                'LapTime',
+                'PitOutTime',
+                'PitInTime',
+                'Sector1Time',
+                'Sector2Time',
+                'Sector3Time',
+                'Sector1SessionTime',
+                'Sector2SessionTime',
+                'Sector3SessionTime',
+                'LapStartTime'
+            ]
+            for c in columns:
+                driver_laps[c] = driver_laps[c].dt.total_seconds()
+                target_driver_laps[c] = target_driver_laps[c].dt.total_seconds()
+            columns = ['LapNumber', 'Stint', 'TyreLife', 'Position']
+            driver_laps[columns] = driver_laps[columns].astype('int')
+            target_driver_laps[columns] = target_driver_laps[columns].astype('int')
+
+            drive_fastest_lap = session.laps.pick_driver(st.session_state.driver).pick_quicklaps().reset_index().pick_fastest()
+            drive_fastest_lap_tel = drive_fastest_lap.get_telemetry()
+            target_drive_fastest_lap = session.laps.pick_driver(st.session_state.target_driver).pick_quicklaps().reset_index().pick_fastest()
+            target_drive_fastest_lap_tel = target_drive_fastest_lap.get_telemetry()
+            for c in ['SessionTime', 'Time']:
+                drive_fastest_lap_tel[c] = drive_fastest_lap_tel[c].dt.total_seconds()
+                target_drive_fastest_lap_tel[c] = target_drive_fastest_lap_tel[c].dt.total_seconds()
+
     except fastf1.core.DataNotLoadedError:
         st.text('レース情報を取得できませんでした')
         return
 
-    driver_laps = session.laps.pick_driver(st.session_state.driver).reset_index()
-    target_driver_laps = session.laps.pick_driver(st.session_state.target_driver).reset_index()
-    columns = [
-        'Time',
-        'LapTime',
-        'PitOutTime',
-        'PitInTime',
-        'Sector1Time',
-        'Sector2Time',
-        'Sector3Time',
-        'Sector1SessionTime',
-        'Sector2SessionTime',
-        'Sector3SessionTime',
-        'LapStartTime'
-    ]
-    for c in columns:
-        driver_laps[c] = driver_laps[c].dt.total_seconds()
-        target_driver_laps[c] = target_driver_laps[c].dt.total_seconds()
-    columns = ['LapNumber', 'Stint', 'TyreLife', 'Position']
-    driver_laps[columns] = driver_laps[columns].astype('int')
-    target_driver_laps[columns] = target_driver_laps[columns].astype('int')
-
-    driver_laps_pd = pd.DataFrame(driver_laps)
-    target_driver_laps_pd = pd.DataFrame(target_driver_laps)
-
-    comp_pd = pd.merge(driver_laps_pd, target_driver_laps_pd, on=['LapNumber'], how='left')
-    comp_pd['TimeGap'] = comp_pd['Time_x'] - comp_pd['Time_y']
-    comp_pd['LapTimeGap'] = comp_pd['LapTime_x'] - comp_pd['LapTime_y']
-    comp_pd = comp_pd.rename(columns={
+    laps_comparison = pd.merge(driver_laps, target_driver_laps, on=['LapNumber'], how='left')
+    laps_comparison['TimeGap'] = laps_comparison['Time_x'] - laps_comparison['Time_y']
+    laps_comparison['LapTimeGap'] = laps_comparison['LapTime_x'] - laps_comparison['LapTime_y']
+    laps_comparison = laps_comparison.rename(columns={
         'Position_x': 'Position',
         'Position_y': 'TargetPosition',
         'LapTime_x': 'LapTime',
@@ -135,38 +141,38 @@ def render():
     st.header('Time gap each lap end')
     fig, ax = plt.subplots()
     ax.bar(
-        comp_pd['LapNumber'],
-        comp_pd['TimeGap'],
-        color=f'#{target_driver_result["TeamColor"].values[0]}',
-        label=target_driver['Abbreviation'].values[0])
+        laps_comparison['LapNumber'],
+        laps_comparison['TimeGap'],
+        color=f'#{target_driver_result["TeamColor"]}',
+        label=target_driver['Abbreviation'])
 
     ax.set_xlabel('LapNumber')
     ax.set_ylabel('TimeGap(s)')
-    y_limit = max([abs(comp_pd['TimeGap'].min()), abs(comp_pd['TimeGap'].max())])
+    y_limit = max([abs(laps_comparison['TimeGap'].min()), abs(laps_comparison['TimeGap'].max())])
     y_limit = y_limit * 1.2
     ax.set_ylim(-1 * y_limit, y_limit)
 
     ax.legend()
-    fig.suptitle(
-        f"Time gap each lap end {driver['Abbreviation'].values[0]} and {target_driver['Abbreviation'].values[0]}")
     st.pyplot(fig)
 
     st.header('Comparison data')
-    drive_fastest_lap = session.laps.pick_driver(st.session_state.driver).pick_quicklaps().reset_index().pick_fastest()
-    drive_fastest_lap_tel = drive_fastest_lap.get_telemetry()
-    target_drive_fastest_lap = session.laps.pick_driver(st.session_state.target_driver).pick_quicklaps().reset_index().pick_fastest()
-    target_drive_fastest_lap_tel = target_drive_fastest_lap.get_telemetry()
-    columns = ['SessionTime', 'Time']
-    for c in columns:
-        drive_fastest_lap_tel[c] = drive_fastest_lap_tel[c].dt.total_seconds()
-        target_drive_fastest_lap_tel[c] = target_drive_fastest_lap_tel[c].dt.total_seconds()
-
-    lap_columns = ['Driver', 'Time', 'LapNumber', 'Position', 'Stint', 'TyreLife', 'Compound', 'LapTime', 'Sector1Time', 'Sector2Time', 'Sector3Time']
+    lap_columns = [
+        'Driver',
+        'Time',
+        'LapNumber',
+        'Position',
+        'Stint',
+        'TyreLife',
+        'Compound',
+        'LapTime',
+        'Sector1Time',
+        'Sector2Time',
+        'Sector3Time']
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(st.session_state.driver)
         st.subheader('Laps')
-        st.dataframe(driver_laps_pd[lap_columns], use_container_width=True, hide_index=True)
+        st.dataframe(driver_laps[lap_columns], use_container_width=True, hide_index=True)
         st.subheader('Fastest lap')
         st.dataframe(drive_fastest_lap, use_container_width=True, hide_index=True)
         st.subheader('Fastest lap metrics')
@@ -176,24 +182,24 @@ def render():
     with col2:
         st.subheader(st.session_state.target_driver)
         st.subheader('Laps')
-        st.dataframe(target_driver_laps_pd[lap_columns], use_container_width=True, hide_index=True)
+        st.dataframe(target_driver_laps[lap_columns], use_container_width=True, hide_index=True)
         st.subheader('Fastest lap')
         st.dataframe(target_drive_fastest_lap, use_container_width=True, hide_index=True)
         st.subheader('Fastest lap metrics')
         st.dataframe(target_drive_fastest_lap_tel, use_container_width=True, hide_index=True)
         helper.speed_visualization_on_track_map.render(target_lap=target_drive_fastest_lap)
 
-    columns = [
-        'LapNumber',
-        'TimeGap',
-        'LapTimeGap',
-        'Position',
-        'TargetPosition',
-        'LapTime',
-        'TargetLapTime']
-
     st.header('Comparison each lap')
-    st.dataframe(comp_pd[columns], use_container_width=True)
+    st.dataframe(
+        laps_comparison[[
+            'LapNumber',
+            'TimeGap',
+            'LapTimeGap',
+            'Position',
+            'TargetPosition',
+            'LapTime',
+            'TargetLapTime']],
+        use_container_width=True)
 
 
 def main():

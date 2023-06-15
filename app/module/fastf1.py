@@ -280,7 +280,7 @@ def season_races_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         - DriverCount : int64
         - TeamCount : int64
     """
-    pkl_file = f"/app/data/{year}/race_races.zip"
+    pkl_file = f"/app/data/{year}/season_races.zip"
 
     if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)

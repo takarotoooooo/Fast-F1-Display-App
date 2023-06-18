@@ -6,14 +6,18 @@ import seaborn as sns
 
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
-import module.fastf1 as f1
-import helper.gear_shifts_on_track
-import helper.tyre_strategies_during_race
-import importlib
+import os
+base_dir = os.path.dirname(Path(os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+import module.fastf1 as f1  # noqa: E402
+import helper.gear_shifts_on_track  # noqa: E402
+import helper.tyre_strategies_during_race  # noqa: E402
+import importlib  # noqa: E402
 importlib.reload(f1)
 importlib.reload(helper.tyre_strategies_during_race)
+
+st.set_page_config(layout='wide')
 
 
 def init_session():
@@ -60,11 +64,6 @@ def make_url_to_driver_race_page(value):
 
 def render():
     race = races.query(f"RoundNumber == {st.session_state.round}").iloc[0]
-    st.set_page_config(
-        page_title=f'{st.session_state.year} | {race["EventName"]}',
-        layout='wide'
-    )
-
     st.title(race['OfficialEventName'])
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Race', races['EventName'].values, key='race_name', on_change=race_name_change_hundler)

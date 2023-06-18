@@ -1,6 +1,9 @@
 import fastf1
 import pandas as pd
 import os
+from pathlib import Path
+
+BASE_DIR = os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))
 
 
 def available_years():
@@ -94,7 +97,7 @@ def season_results_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         指定したyearの型が不正
     """
 
-    pkl_file = f"/app/data/{year}/season_results.zip"
+    pkl_file = f"{BASE_DIR}/data/{year}/season_results.zip"
     if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
 
@@ -124,7 +127,7 @@ def season_results_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         else:
             results_pd = pd.concat([results_pd, race_results])
 
-    os.makedirs(f"/app/data/{year}", exist_ok=True)
+    os.makedirs(f"{BASE_DIR}/data/{year}", exist_ok=True)
     results_pd.to_pickle(pkl_file)
 
     return results_pd[[
@@ -180,7 +183,7 @@ def season_teams_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         - RaceCount | int64
         - TotalPoint | float64
     """
-    pkl_file = f"/app/data/{year}/season_teams.zip"
+    pkl_file = f"{BASE_DIR}/data/{year}/season_teams.zip"
 
     if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
@@ -196,7 +199,7 @@ def season_teams_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         'Points': 'TotalPoint'
     })
 
-    os.makedirs(f"/app/data/{year}", exist_ok=True)
+    os.makedirs(f"{BASE_DIR}/data/{year}", exist_ok=True)
     teams_pd.to_pickle(pkl_file)
 
     return teams_pd[team_columns + ['Drivers', 'RaceCount', 'TotalPoint']]
@@ -226,7 +229,7 @@ def season_drivers_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         - RaceCount : int64
         - TotalPoint : float64
     """
-    pkl_file = f"/app/data/{year}/season_drivers.zip"
+    pkl_file = f"{BASE_DIR}/data/{year}/season_drivers.zip"
 
     if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
@@ -248,7 +251,7 @@ def season_drivers_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         'Points': 'TotalPoint'
     })
 
-    os.makedirs(f"/app/data/{year}", exist_ok=True)
+    os.makedirs(f"{BASE_DIR}/data/{year}", exist_ok=True)
     drivers_pd.to_pickle(pkl_file)
 
     return drivers_pd[driver_columns + ['Teams', 'RaceCount', 'TotalPoint']]
@@ -280,7 +283,7 @@ def season_races_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         - DriverCount : int64
         - TeamCount : int64
     """
-    pkl_file = f"/app/data/{year}/season_races.zip"
+    pkl_file = f"{BASE_DIR}/data/{year}/season_races.zip"
 
     if os.path.isfile(pkl_file) and use_cache:
         return pd.read_pickle(pkl_file)
@@ -302,7 +305,7 @@ def season_races_df(year: int, use_cache: bool = True) -> pd.DataFrame:
         'TeamName': 'TeamCount'
     })
 
-    os.makedirs(f"/app/data/{year}", exist_ok=True)
+    os.makedirs(f"{BASE_DIR}/data/{year}", exist_ok=True)
     races_pd.to_pickle(pkl_file)
 
     return races_pd[race_columns + ['DriverCount', 'TeamCount']]

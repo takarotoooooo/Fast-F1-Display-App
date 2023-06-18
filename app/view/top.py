@@ -1,12 +1,12 @@
 import streamlit as st
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
-if '/app/fast-f1-display-app/app' not in sys.path:
-    sys.path.append('/app/fast-f1-display-app/app')
-import module.fastf1 as f1
-import importlib
+import os
+base_dir = os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+import module.fastf1 as f1  # noqa: E402
+import importlib  # noqa: E402
 importlib.reload(f1)
 
 st.set_page_config(layout='wide')

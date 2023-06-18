@@ -6,13 +6,17 @@ import pandas as pd
 
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
-import module.fastf1 as f1
-import helper.speed_visualization_on_track_map
-import importlib
+import os
+base_dir = os.path.dirname(Path(os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+import module.fastf1 as f1  # noqa: E402
+import helper.speed_visualization_on_track_map  # noqa: E402
+import importlib  # noqa: E402
 importlib.reload(f1)
 importlib.reload(helper.speed_visualization_on_track_map)
+
+st.set_page_config(layout='wide')
 
 
 def init_session():
@@ -75,10 +79,6 @@ def render():
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"').iloc[0]
     target_driver = drivers.query(f'Abbreviation == "{st.session_state.target_driver}"').iloc[0]
     target_driver_result = f1.season_results_df(st.session_state.year).query(f'Abbreviation == "{st.session_state.target_driver}"').iloc[0]
-    st.set_page_config(
-        page_title=f'{st.session_state.year} | {race["EventName"]} | {driver["Abbreviation"]} - {target_driver["Abbreviation"]}',
-        layout='wide'
-    )
 
     st.title(f'{st.session_state.year} | {race["EventName"]} | {driver["Abbreviation"]} - {target_driver["Abbreviation"]}')
     st.sidebar.selectbox('Year', f1.available_years(), key='year')

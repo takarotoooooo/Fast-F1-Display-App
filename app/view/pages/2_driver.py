@@ -3,11 +3,15 @@ import fastf1
 import fastf1.plotting
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
-import module.fastf1 as f1
-import importlib
+import os
+base_dir = os.path.dirname(Path(os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+import module.fastf1 as f1  # noqa: E402
+import importlib  # noqa: E402
 importlib.reload(f1)
+
+st.set_page_config(layout='wide')
 
 
 def init_session():
@@ -42,11 +46,6 @@ def make_url_to_driver_race_page(value):
 def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"').iloc[0]
-    st.set_page_config(
-        page_title=f'{st.session_state.year} | {driver["FullName"]}',
-        layout='wide'
-    )
-
     st.title(f"{st.session_state.year} | {driver['FullName']}")
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
     st.sidebar.selectbox('Driver', drivers['Abbreviation'].values, key='driver')

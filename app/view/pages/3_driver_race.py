@@ -6,18 +6,22 @@ import seaborn as sns
 
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
-import module.fastf1 as f1
-import helper.gear_shifts_on_track
-import helper.tyre_strategies_during_race
-import helper.speed_visualization_on_track_map
-import helper.throttle_pedal_pressure_on_track
-import importlib
+import os
+base_dir = os.path.dirname(Path(os.path.dirname(Path(os.path.dirname(Path(__file__).resolve())))))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+import module.fastf1 as f1  # noqa: E402
+import helper.gear_shifts_on_track  # noqa: E402
+import helper.tyre_strategies_during_race  # noqa: E402
+import helper.speed_visualization_on_track_map  # noqa: E402
+import helper.throttle_pedal_pressure_on_track  # noqa: E402
+import importlib  # noqa: E402
 importlib.reload(f1)
 importlib.reload(helper.tyre_strategies_during_race)
 importlib.reload(helper.speed_visualization_on_track_map)
 importlib.reload(helper.throttle_pedal_pressure_on_track)
+
+st.set_page_config(layout='wide')
 
 
 def init_session():
@@ -71,10 +75,6 @@ def render():
     fastf1.plotting.setup_mpl(misc_mpl_mods=False)
     race = races.query(f"RoundNumber == {st.session_state.round}").iloc[0]
     driver = drivers.query(f'Abbreviation == "{st.session_state.driver}"').iloc[0]
-    st.set_page_config(
-        page_title=f"{st.session_state.year} | {race['EventName']} | {driver['FullName']}",
-        layout='wide'
-    )
 
     st.title(f"{st.session_state.year} | {race['EventName']} | {driver['FullName']}")
     st.sidebar.selectbox('Year', f1.available_years(), key='year')

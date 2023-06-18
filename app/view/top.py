@@ -1,8 +1,10 @@
 import streamlit as st
 import sys
 from pathlib import Path
-if 'app' not in sys.path:
-    sys.path.append('app')
+if str(Path().resolve()) not in sys.path:
+    sys.path.append(str(Path().resolve()))
+if '/app/fast-f1-display-app/app' not in sys.path:
+    sys.path.append('/app/fast-f1-display-app/app')
 
 st.write(Path().resolve())
 st.write(sys.path)

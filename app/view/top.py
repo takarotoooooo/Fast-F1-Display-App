@@ -1,8 +1,8 @@
 import streamlit as st
 import sys
 from pathlib import Path
-if str(Path().resolve()) not in sys.path:
-    sys.path.append(str(Path().resolve()))
+if 'app' not in sys.path:
+    sys.path.append('app')
 
 st.write(Path().resolve())
 st.write(sys.path)

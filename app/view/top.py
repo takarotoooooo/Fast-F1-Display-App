@@ -5,14 +5,11 @@ if str(Path().resolve()) not in sys.path:
     sys.path.append(str(Path().resolve()))
 if '/app/fast-f1-display-app/app' not in sys.path:
     sys.path.append('/app/fast-f1-display-app/app')
-
-st.write(Path().resolve())
-st.write(sys.path)
-st.write(st.__version__)
-
 import module.fastf1 as f1
 import importlib
 importlib.reload(f1)
+
+st.set_page_config(layout='wide')
 
 
 def init_session():
@@ -40,11 +37,6 @@ def make_url_to_driver_page(value):
 
 
 def render():
-    st.set_page_config(
-        page_title=f'{st.session_state.year} Season',
-        layout='wide'
-    )
-
     st.title(f"{st.session_state.year} Season")
 
     st.sidebar.selectbox('Year', f1.available_years(), key='year')
